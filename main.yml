@@ -1,0 +1,53 @@
+# .github/workflows/main.yml
+
+name: CI Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📦 Checkout Code
+        uses: actions/checkout@v3
+
+      - name: 🛠️ Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: 📥 Install Dependencies
+        run: npm ci
+
+      - name: ✅ Run Tests
+        run: npm test
+
+      - name: 🧱 Build Project
+        run: npm run build
+        if: success()  # only runs if tests pass
+
+  deploy:
+    needs: build-and-test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🚀 Checkout Code
+        uses: actions/checkout@v3
+
+      - name: 🧰 Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: 🔐 Setup Environment Variables
+        run: |
+          echo "API_KEY=${{ secrets.API_KEY }}" >> $GITHUB_ENV
+
+      - name: 🚀 Deploy
+        run: |
+          echo "Deploying to production..."
+          ./deploy.sh  # you need this script in your repo
